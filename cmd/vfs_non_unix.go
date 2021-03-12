@@ -7,5 +7,5 @@ import (
 )
 
 func getVFSOptions() vfscommon.Options {
-	return vfscommon.getDefaultVFSOptions()
+	return getDefaultVFSOptions()
 }
