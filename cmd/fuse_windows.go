@@ -1,6 +1,6 @@
 // +build cmount
 // +build cgo
-// +build !linux !freebsd
+// +build windows
 
 package main
 
@@ -34,7 +34,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/billziss-gh/cgofuse/fuse"
@@ -199,7 +198,7 @@ func doMount(VFS *vfs.VFS, mountPath string, opt *mountlib.Options) (<-chan erro
 		// Shutdown the VFS
 		fsys.VFS.Shutdown()
 		var umountOK bool
-		if atomic.LoadInt32(&fsys.destroyed) != 0 {
+		if fsys.IsDestroyed() {
 			fs.Debugf(nil, "Not calling host.Unmount as mount already Destroyed")
 			umountOK = true
 		} else if atexit.Signalled() {
@@ -232,7 +231,7 @@ func doMount(VFS *vfs.VFS, mountPath string, opt *mountlib.Options) (<-chan erro
 	case err := <-errChan:
 		err = errors.Wrap(err, "mount stopped before calling Init")
 		return nil, nil, err
-	case <-fsys.ready:
+	case <-fsys.Ready:
 	}
 
 	// Wait for the mount point to be available on Windows

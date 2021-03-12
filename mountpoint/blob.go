@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -81,7 +80,7 @@ func (m *blobMount) ensurePathInCache(pathSegment string) error {
 
 	cachedSegment := pathSegment
 	lowestCachedBlobID := m.BlobID
-	for cachedSegment != string(os.PathSeparator) && cachedSegment != "." {
+	for cachedSegment != "/" && cachedSegment != "." {
 		blobID, ok := m.cache.GetBlobID(cachedSegment)
 		if ok {
 			lowestCachedBlobID = blobID
@@ -90,11 +89,11 @@ func (m *blobMount) ensurePathInCache(pathSegment string) error {
 		cachedSegment = filepath.Dir(cachedSegment)
 	}
 
-	if cachedSegment == "." || cachedSegment == string(os.PathSeparator) {
+	if cachedSegment == "." || cachedSegment == "/" {
 		cachedSegment = ""
 	}
 
-	uncachedSegment := strings.TrimPrefix(strings.TrimPrefix(pathSegment, cachedSegment), string(os.PathSeparator))
+	uncachedSegment := strings.TrimPrefix(strings.TrimPrefix(pathSegment, cachedSegment), "/")
 
 	fmt.Printf("cachedSegment='%s', uncachedSegment='%s', lowestCachedBlobID='%s'\n", cachedSegment, uncachedSegment, lowestCachedBlobID)
 
@@ -104,8 +103,8 @@ func (m *blobMount) ensurePathInCache(pathSegment string) error {
 			return err
 		}
 
-		splitted := strings.SplitN(uncachedSegment, string(os.PathSeparator), 2)
-		if splitted[0] == string(os.PathSeparator) || splitted[0] == "." || splitted[0] == "" {
+		splitted := strings.SplitN(uncachedSegment, "/", 2)
+		if splitted[0] == "/" || splitted[0] == "." || splitted[0] == "" {
 			// We reached the end.
 			break
 		}

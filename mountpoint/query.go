@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -92,7 +91,7 @@ func (m *queryMount) ensurePathInCache(pathSegment string) error {
 
 	cachedSegment := pathSegment
 	lowestCachedBlobID := ""
-	for cachedSegment != string(os.PathSeparator) && cachedSegment != "." {
+	for cachedSegment != "/" && cachedSegment != "." {
 		blobID, ok := m.cache.GetBlobID(cachedSegment)
 		if ok {
 			lowestCachedBlobID = blobID
@@ -119,8 +118,8 @@ func (m *queryMount) ensurePathInCache(pathSegment string) error {
 			return err
 		}
 
-		splitted := strings.SplitN(uncachedSegment, string(os.PathSeparator), 2)
-		if splitted[0] == string(os.PathSeparator) || splitted[0] == "." || splitted[0] == "" {
+		splitted := strings.SplitN(uncachedSegment, "/", 2)
+		if splitted[0] == "/" || splitted[0] == "." || splitted[0] == "" {
 			// We reached the end.
 			break
 		}
@@ -154,7 +153,7 @@ func (m *queryMount) listNestedEntries(ctx context.Context, pathSegment string, 
 		return entries, nil
 	}
 
-	splitted := strings.SplitN(pathSegment, string(os.PathSeparator), 2)
+	splitted := strings.SplitN(pathSegment, "/", 2)
 	head := splitted[0]
 
 	rootQuery := payload.NewStructuredQuery(m.Expression).WithSize(1000) // TODO: Paging
