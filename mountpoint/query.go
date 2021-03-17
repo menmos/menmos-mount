@@ -3,7 +3,6 @@ package mountpoint
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path"
 	"path/filepath"
 	"strings"
@@ -15,25 +14,24 @@ import (
 )
 
 type queryMount struct {
+	*abstractMount
+
 	Expression payload.Expression
 
 	GroupByTags     bool
 	GroupByMetaKeys []string
-
-	client *menmos.Client
-	fs     fs.Info
-
-	cache *pathCache
 }
 
 func NewQueryMount(expression payload.Expression, groupByTags bool, groupByMetaKeys []string, client *menmos.Client, fs fs.Info) *queryMount {
 	return &queryMount{
+		abstractMount: &abstractMount{
+			client,
+			fs,
+			newPathCache(),
+		},
 		Expression:      expression,
 		GroupByTags:     groupByTags,
 		GroupByMetaKeys: groupByMetaKeys,
-		client:          client,
-		fs:              fs,
-		cache:           newPathCache(),
 	}
 }
 
@@ -46,104 +44,8 @@ func (m *queryMount) groupByKeysContains(key string) bool {
 	return false
 }
 
-func (m *queryMount) getQueryChildrenMap(query *payload.Query) (map[string]string, error) {
-	results, err := m.client.Query(query)
-	if err != nil {
-		return nil, err
-	}
-
-	hitMap := make(map[string]string)
-
-	for _, hit := range results.Hits {
-		hitMap[hit.Metadata.Name] = hit.ID
-	}
-
-	return hitMap, nil
-}
-
-func (m *queryMount) getEntriesFromQuery(query *payload.Query, fullpath string) (fs.DirEntries, error) {
-	results, err := m.client.Query(query)
-	if err != nil {
-		return []fs.DirEntry{}, err
-	}
-
-	entries := make([]fs.DirEntry, results.Count, results.Count)
-
-	for i, hit := range results.Hits {
-		if hit.Metadata.BlobType == "File" {
-			fmt.Println("file entry for blob: ", hit.ID)
-			entries[i] = entry.NewFile(hit.ID, hit.Metadata, path.Join(fullpath, hit.Metadata.Name), m.client, m.fs)
-		} else {
-			fmt.Println("dir entry for blob: ", hit.ID)
-			entries[i] = entry.NewDirectory(hit.ID, hit.Metadata, path.Join(fullpath, hit.Metadata.Name), m.client, m.fs)
-		}
-	}
-
-	return entries, nil
-}
-
-func (m *queryMount) ensurePathInCache(pathSegment string) error {
-	// Cache the blob IDs of all directories in the way of the path we're trying to reach.
-	// TODO: Document this part some more because its confusing as hell.
-
-	// Walk back the cache to find the lowest cached directory in the path we're looking for (if any).
-	fmt.Printf("resolving blob IDS for '%s'\n", pathSegment)
-
-	cachedSegment := pathSegment
-	lowestCachedBlobID := ""
-	for cachedSegment != "/" && cachedSegment != "." {
-		blobID, ok := m.cache.GetBlobID(cachedSegment)
-		if ok {
-			lowestCachedBlobID = blobID
-			break
-		}
-		cachedSegment = filepath.Dir(cachedSegment)
-	}
-
-	if cachedSegment == "." || cachedSegment == "/" {
-		cachedSegment = ""
-	}
-
-	if lowestCachedBlobID == "" {
-		return errors.New("no base Blob ID found")
-	}
-
-	uncachedSegment := strings.TrimPrefix(pathSegment, cachedSegment)
-
-	fmt.Printf("cachedSegment='%s', uncachedSegment='%s', lowestCachedBlobID='%s'\n", cachedSegment, uncachedSegment, lowestCachedBlobID)
-
-	for {
-		cachedBlobEntries, err := m.getQueryChildrenMap(payload.NewStructuredQuery(payload.NewExpression().AndParent(lowestCachedBlobID)))
-		if err != nil {
-			return err
-		}
-
-		splitted := strings.SplitN(uncachedSegment, "/", 2)
-		if splitted[0] == "/" || splitted[0] == "." || splitted[0] == "" {
-			// We reached the end.
-			break
-		}
-
-		entryName := splitted[0]
-		if entryBlobID, ok := cachedBlobEntries[entryName]; ok {
-			cachedSegment = filepath.Join(cachedSegment, entryName)
-			m.cache.SetBlobID(cachedSegment, entryBlobID)
-		} else {
-			return fs.ErrorDirNotFound
-		}
-
-		if len(splitted) == 1 {
-			break
-		}
-
-		uncachedSegment = splitted[1]
-	}
-
-	return nil
-}
-
 func (m *queryMount) listNestedEntries(ctx context.Context, pathSegment string, fullpath string) (fs.DirEntries, error) {
-	fmt.Println("Listing nested entries")
+	fs.Infof(nil, "Listing nested entries")
 	if pathSegment == "" {
 		entries := make([]fs.DirEntry, 0, len(m.GroupByMetaKeys)+1)
 		entries = append(entries, &entry.VDirEntry{Name: "Tags", FullPath: path.Join(fullpath, "Tags")})
@@ -156,8 +58,8 @@ func (m *queryMount) listNestedEntries(ctx context.Context, pathSegment string, 
 	splitted := strings.SplitN(pathSegment, "/", 2)
 	head := splitted[0]
 
-	rootQuery := payload.NewStructuredQuery(m.Expression).WithSize(1000) // TODO: Paging
-	results, err := m.client.Query(rootQuery.WithFacets(true))
+	rootQuery := payload.NewStructuredQuery(m.Expression).WithSize(0).WithFacets(true) // We're grouping, we don't need any results.
+	results, err := m.client.Query(rootQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -181,8 +83,6 @@ func (m *queryMount) listNestedEntries(ctx context.Context, pathSegment string, 
 
 		return mount.ListEntries(ctx, tail, fullpath)
 	} else if m.groupByKeysContains(head) { // Head is a k/v key
-		fmt.Println("HEAD is K/V: ", head)
-		fmt.Println("splitted")
 		kvMountMap := make(map[string]MountPoint)
 		for value := range facets.Meta[head] {
 			kvMountMap[value] = NewQueryMount(m.Expression.AndKeyValue(head, value), false, []string{}, m.client, m.fs)
@@ -201,7 +101,7 @@ func (m *queryMount) listNestedEntries(ctx context.Context, pathSegment string, 
 }
 
 func (m *queryMount) listFlatEntries(pathSegment string, fullpath string) (fs.DirEntries, error) {
-	rootQuery := payload.NewStructuredQuery(m.Expression).WithSize(1000) // TODO: Paging
+	rootQuery := payload.NewStructuredQuery(m.Expression)
 	if pathSegment == "" || pathSegment == "." {
 		return m.getEntriesFromQuery(rootQuery, fullpath)
 	}
@@ -228,7 +128,7 @@ func (m *queryMount) listFlatEntries(pathSegment string, fullpath string) (fs.Di
 }
 
 func (m *queryMount) ListEntries(ctx context.Context, pathSegment string, fullpath string) (fs.DirEntries, error) {
-	fmt.Printf("listing query entries for '%s'\n", pathSegment)
+	fs.Infof(nil, "listing query entries for '%s'", pathSegment)
 
 	shouldGroup := m.GroupByTags || len(m.GroupByMetaKeys) > 0
 

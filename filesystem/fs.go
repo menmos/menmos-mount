@@ -3,7 +3,6 @@ package filesystem
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"path/filepath"
 	"time"
@@ -99,22 +98,22 @@ func (f *Filesystem) List(ctx context.Context, dir string) (entries fs.DirEntrie
 }
 
 func (f *Filesystem) NewObject(ctx context.Context, remote string) (fs.Object, error) {
-	fmt.Println("NEW OBJECT")
+	fs.Infof(nil, "new object")
 	return nil, fs.ErrorNotImplemented
 }
 
 func (f *Filesystem) Put(ctx context.Context, in io.Reader, src fs.ObjectInfo, options ...fs.OpenOption) (fs.Object, error) {
-	fmt.Println("RECEIVED PUT REQUEST FOR ", src.Remote())
+	fs.Infof(nil, "received PUT request for %s", src.Remote())
 	objectSize := src.Size()
 	if objectSize == -1 {
-		fmt.Println("PUT FAILED")
+		fs.Infof(nil, "PUT failed")
 		return nil, errors.New("object size needs to be known to upload")
 	}
 
 	// To put the object, we first need the blob ID of its parent directory.
 	// TODO: Put is called for updates AND creations - distinguish the two before uploading.
 	if parentDirectory, ok := f.mount.ResolveBlobDirectory(filepath.Dir(src.Remote())); ok {
-		fmt.Println("FOUND PARENT BLOB: ", parentDirectory.BlobID)
+		fs.Infof(nil, "found parent blob: %s", parentDirectory.BlobID)
 
 		if currentFile, ok := f.mount.ResolveBlobFile(src.Remote()); ok {
 			// Update
@@ -129,20 +128,19 @@ func (f *Filesystem) Put(ctx context.Context, in io.Reader, src fs.ObjectInfo, o
 		meta.Parents = append(meta.Parents, parentDirectory.BlobID)
 		blobID, err := f.Client.Push(io.NopCloser(in), meta)
 		if err != nil {
-			fmt.Println("PUT FAILED: ", err.Error())
+			fs.Infof(nil, "PUT failed", err.Error())
 			return nil, err
 		}
-		fmt.Println("PUT SUCCESS: ", blobID)
+		fs.Infof(nil, "PUT success", blobID)
 		return entry.NewFile(blobID, meta, src.Remote(), f.Client, f), nil
 	}
 
-	fmt.Println("PERMISSION DENIED")
+	fs.Infof(nil, "permission denied")
 	return nil, fs.ErrorPermissionDenied
 }
 
 func (f *Filesystem) Mkdir(ctx context.Context, dir string) error {
-	fmt.Println("Received MKDIR for", dir)
-	// TODO: Reuse code from put.
+	fs.Infof(nil, "received MKDIR for: %s")
 
 	if _, fileOk := f.mount.ResolveBlobFile(dir); fileOk {
 		return fs.ErrorIsFile
@@ -153,7 +151,7 @@ func (f *Filesystem) Mkdir(ctx context.Context, dir string) error {
 	}
 
 	if parentDirectory, ok := f.mount.ResolveBlobDirectory(filepath.Dir(dir)); ok {
-		fmt.Println("FOUND PARENT BLOB: ", parentDirectory.BlobID)
+		fs.Infof(nil, "found new parent blob: %s", parentDirectory.BlobID)
 		meta := payload.NewBlobMeta(filepath.Base(dir), "Directory", 0)
 		meta.Parents = append(meta.Parents, parentDirectory.BlobID)
 		blobID, err := f.Client.Push(nil, meta)
@@ -161,7 +159,7 @@ func (f *Filesystem) Mkdir(ctx context.Context, dir string) error {
 			return err
 		}
 
-		fmt.Println("PUT SUCCESS: ", blobID)
+		fs.Infof(nil, "PUT success: ", blobID)
 		return nil
 	}
 
@@ -175,7 +173,7 @@ func (f *Filesystem) Rmdir(ctx context.Context, dir string) error {
 	}
 
 	// Make sure the directory is empty.
-	response, err := f.Client.Query(payload.NewStructuredQuery(payload.NewExpression().AndParent(parentEntry.BlobID)))
+	response, err := f.Client.Query(payload.NewStructuredQuery(payload.NewExpression().AndParent(parentEntry.BlobID)).WithSize(0))
 	if err != nil {
 		return err
 	}

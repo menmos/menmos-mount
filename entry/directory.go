@@ -21,8 +21,13 @@ func NewDirectory(blobID string, blobMeta payload.BlobMeta, path string, client 
 }
 
 func (b *DirectoryBlobEntry) Items() int64 {
-	// TODO: Run a query to find out the nb. of children of given blob.
-	return -1
+	results, err := b.client.Query(payload.NewStructuredQuery(payload.NewExpression().AndParent(b.BlobID)).WithSize(0)) // With a size of 0 we load no document - query is faster.
+	if err != nil {
+		// TODO: Log once we have logging.
+		return -1
+	}
+
+	return int64(results.Total)
 }
 
 func (b *DirectoryBlobEntry) ID() string {

@@ -2,7 +2,6 @@ package mountpoint
 
 import (
 	"context"
-	"fmt"
 	"path"
 	"strings"
 
@@ -19,7 +18,7 @@ func NewVirtualMount(mounts map[string]MountPoint) MountPoint {
 }
 
 func (m *virtualMount) ListEntries(ctx context.Context, pathSegment string, fullpath string) (fs.DirEntries, error) {
-	fmt.Printf("listing vmount entries for '%s'\n", pathSegment)
+	fs.Infof(nil, "listing vmount entries for '%s'", pathSegment)
 	splittedPath := strings.SplitN(pathSegment, "/", 2)
 	head := splittedPath[0]
 
@@ -69,7 +68,7 @@ func (m *virtualMount) ResolveBlobDirectory(path string) (*entry.DirectoryBlobEn
 }
 
 func (m *virtualMount) ResolveBlobFile(path string) (*entry.FileBlobEntry, bool) {
-	fmt.Println("VMount Resolving blob file: ", path)
+	fs.Infof(nil, "vmount resolving blob file: %s", path)
 	splittedPath := strings.SplitN(path, "/", 2)
 	head := splittedPath[0]
 

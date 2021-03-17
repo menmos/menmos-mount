@@ -75,10 +75,10 @@ func (b *FileBlobEntry) Open(ctx context.Context, options ...fs.OpenOption) (io.
 func (b *FileBlobEntry) Update(ctx context.Context, in io.Reader, src fs.ObjectInfo, options ...fs.OpenOption) error {
 	for _, option := range options {
 		if _, ok := option.(*fs.RangeOption); ok {
-			fmt.Println("GOT RANGE OPTION")
+			fs.Infof(nil, "got range option")
 			break
 		} else if _, ok := option.(*fs.SeekOption); ok {
-			fmt.Println("GOT SEEK OPTION")
+			fs.Infof(nil, "got seek option")
 			break
 		} else if option.Mandatory() {
 			return fmt.Errorf("unhandled option: %s", option.String())
@@ -90,7 +90,7 @@ func (b *FileBlobEntry) Update(ctx context.Context, in io.Reader, src fs.ObjectI
 
 func (b *FileBlobEntry) Remove(ctx context.Context) error {
 	if b.BlobID == "" {
-		fmt.Println("DELETE - NO BLOB ID DEFINED: ", *b)
+		fs.Infof(nil, "delete - no blob id defined: %s", *b)
 		return nil
 	}
 
