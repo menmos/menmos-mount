@@ -69,7 +69,7 @@ func (b *FileBlobEntry) Open(ctx context.Context, options ...fs.OpenOption) (io.
 		rangeEnd = b.Size() - 1
 	}
 
-	return b.client.Get(b.BlobID, &menmos.Range{Start: rangeStart, End: rangeEnd})
+	return b.client.GetBody(b.BlobID, &menmos.Range{Start: rangeStart, End: rangeEnd})
 }
 
 func (b *FileBlobEntry) Update(ctx context.Context, in io.Reader, src fs.ObjectInfo, options ...fs.OpenOption) error {

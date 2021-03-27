@@ -126,7 +126,7 @@ func (f *Filesystem) Put(ctx context.Context, in io.Reader, src fs.ObjectInfo, o
 		// Create
 		meta := payload.NewBlobMeta(filepath.Base(src.Remote()), "File", uint64(objectSize))
 		meta.Parents = append(meta.Parents, parentDirectory.BlobID)
-		blobID, err := f.Client.Push(io.NopCloser(in), meta)
+		blobID, err := f.Client.CreateBlob(io.NopCloser(in), meta)
 		if err != nil {
 			fs.Infof(nil, "PUT failed", err.Error())
 			return nil, err
@@ -154,7 +154,7 @@ func (f *Filesystem) Mkdir(ctx context.Context, dir string) error {
 		fs.Infof(nil, "found new parent blob: %s", parentDirectory.BlobID)
 		meta := payload.NewBlobMeta(filepath.Base(dir), "Directory", 0)
 		meta.Parents = append(meta.Parents, parentDirectory.BlobID)
-		blobID, err := f.Client.Push(nil, meta)
+		blobID, err := f.Client.CreateBlob(nil, meta)
 		if err != nil {
 			return err
 		}
