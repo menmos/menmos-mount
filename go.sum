@@ -382,6 +382,8 @@ github.com/mattn/go-runewidth v0.0.9/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m
 github.com/mattn/go-runewidth v0.0.10/go.mod h1:RAqKPSqVFrSLVXbA8x7dzmKdmGzieGRCM46jaSJTDAk=
 github.com/matttproud/golang_protobuf_extensions v1.0.1 h1:4hp9jkHxhMHkqkrB3Ix0jegS5sx/RkqARlsWZ6pIwiU=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
+github.com/menmos/menmos-go v0.0.0-20210327184101-ecf99c567e7a h1:xF9toOCQbHAYRB+gCkI2bxHEySez4P3etiZDCEZ+JVU=
+github.com/menmos/menmos-go v0.0.0-20210327184101-ecf99c567e7a/go.mod h1:ro0Z9wPdwEMt3eYoVZi1GE4GTx5UmwbmB+/EtyiKLkw=
 github.com/menmos/rclone v1.54.1-0.20210312030826-dcedb43608f8 h1:D+DAVuRce/gr8eCNSYzR21D0TkIMLp9eVzI6MBgFT4E=
 github.com/menmos/rclone v1.54.1-0.20210312030826-dcedb43608f8/go.mod h1:DOXviH5yEweYwLVTLu0OZNKwBgu1Q1UDYwhEoOGZqQY=
 github.com/menmos/rclone v1.54.1 h1:rEJP74xoxI7nJGgQjtNZ49SgNwfZarozzEQ+vBD/MAc=
