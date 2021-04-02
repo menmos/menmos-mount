@@ -98,7 +98,8 @@ func (f *Filesystem) List(ctx context.Context, dir string) (entries fs.DirEntrie
 }
 
 func (f *Filesystem) NewObject(ctx context.Context, remote string) (fs.Object, error) {
-	fs.Infof(nil, "new object")
+	// TODO: In normal filesystem use, this isn't called. Not sure this is actually required for our use case.
+	// Implement this if it causes problems down the line.
 	return nil, fs.ErrorNotImplemented
 }
 

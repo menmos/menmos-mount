@@ -85,6 +85,7 @@ func (b *FileBlobEntry) Update(ctx context.Context, in io.Reader, src fs.ObjectI
 		}
 	}
 
+	// TODO: Everything works without this for now, but implementing this update might give us some better performance.
 	return fs.ErrorNotImplemented
 }
 

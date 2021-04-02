@@ -18,7 +18,7 @@ func getMountConfig(c *cli.Context) (cfg filesystem.Config, err error) {
 	if path := c.String("config"); path != "" {
 		cfg, err = LoadConfig(path)
 	} else {
-		cfg, err = LoadDefaultConfig()
+		cfg, err = LoadOrCreateDefaultConfig()
 	}
 	return
 }
