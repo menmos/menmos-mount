@@ -1,0 +1,16 @@
+[directory]
+url = "http://localhost"
+port = 30300
+
+[node]
+name = "alpha"
+db_path= "%[1]s/amphora_db"
+admin_password = "integration"
+encryption_key = "t1fhrIw33oLxhJvcFY5GRbrANiI9uBL3"
+
+[node.blob_storage]
+type = "Directory"
+path = "%[1]s/blobs"
+
+[server]
+port = 30301
