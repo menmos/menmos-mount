@@ -15,5 +15,6 @@
 # vendor/
 
 build/*
+menmos_bin/*
 
 .vscode/*

@@ -46,5 +46,7 @@ func TestMain(m *testing.M) {
 		exitCode = m.Run()
 	}
 
+	// TODO: Add a cleanup routine here that queries for all items with the "integration" tag and deletes them all, just in case.
+
 	os.Exit(exitCode)
 }
