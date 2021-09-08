@@ -1,0 +1,9 @@
+[server]
+type = "http"
+port = 30300
+
+[node]
+db_path = "%s/menmosd_db"
+registration_secret = "integration"
+admin_password = "integration"
+encryption_key = "t1fhrIw33oLxhJvcFY5GRbrANiI9uBL3"

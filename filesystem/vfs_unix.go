@@ -1,6 +1,6 @@
 // +build linux darwin freebsd
 
-package main
+package filesystem
 
 import (
 	"github.com/rclone/rclone/vfs/vfscommon"

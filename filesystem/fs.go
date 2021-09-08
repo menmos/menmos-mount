@@ -24,9 +24,15 @@ type Filesystem struct {
 }
 
 func NewFs(ctx context.Context, config Config) (fs.Fs, error) {
-	client, err := menmos.NewFromProfile(config.Profile)
-	if err != nil {
-		return nil, err
+	var client *menmos.Client
+	var err error
+	if config.Client == nil {
+		client, err = menmos.NewFromProfile(config.Profile)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		client = config.Client
 	}
 
 	f := &Filesystem{
@@ -129,10 +135,10 @@ func (f *Filesystem) Put(ctx context.Context, in io.Reader, src fs.ObjectInfo, o
 		meta.Parents = append(meta.Parents, parentDirectory.BlobID)
 		blobID, err := f.Client.CreateBlob(io.NopCloser(in), meta)
 		if err != nil {
-			fs.Infof(nil, "PUT failed", err.Error())
+			fs.Infof(nil, "PUT failed: %s", err.Error())
 			return nil, err
 		}
-		fs.Infof(nil, "PUT success", blobID)
+		fs.Infof(nil, "PUT success: %s", blobID)
 		return entry.NewFile(blobID, meta, src.Remote(), f.Client, f), nil
 	}
 
@@ -141,7 +147,7 @@ func (f *Filesystem) Put(ctx context.Context, in io.Reader, src fs.ObjectInfo, o
 }
 
 func (f *Filesystem) Mkdir(ctx context.Context, dir string) error {
-	fs.Infof(nil, "received MKDIR for: %s")
+	fs.Infof(nil, "received MKDIR for: %s", dir)
 
 	if _, fileOk := f.mount.ResolveBlobFile(dir); fileOk {
 		return fs.ErrorIsFile
@@ -160,7 +166,7 @@ func (f *Filesystem) Mkdir(ctx context.Context, dir string) error {
 			return err
 		}
 
-		fs.Infof(nil, "PUT success: ", blobID)
+		fs.Infof(nil, "PUT success: %s", blobID)
 		return nil
 	}
 

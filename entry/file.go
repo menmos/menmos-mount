@@ -91,7 +91,7 @@ func (b *FileBlobEntry) Update(ctx context.Context, in io.Reader, src fs.ObjectI
 
 func (b *FileBlobEntry) Remove(ctx context.Context) error {
 	if b.BlobID == "" {
-		fs.Infof(nil, "delete - no blob id defined: %s", *b)
+		fs.Infof(nil, "delete - no blob id defined: %v", *b)
 		return nil
 	}
 

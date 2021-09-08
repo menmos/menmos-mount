@@ -1,0 +1,41 @@
+name: "Tests"
+on:
+  push: {}
+
+jobs:
+  tests:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: extractions/setup-just@v1
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.17.x'
+
+      - name: Mount module cache
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: menmos-mount-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            menmos-mount-
+
+      - name: Build
+        run: |
+          just build
+
+      - name: Unit Tests
+        run: |
+          just unit
+
+      - name: Pull Latest Menmos Release
+        run: |
+          just pull_latest
+          chmod +x ./menmos_bin/menmosd
+          chmod +x ./menmos_bin/amphora
+
+      - name: Integration Tests
+        run: |
+          just integration -integration-local -menmosd-target ./menmos_bin

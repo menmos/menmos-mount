@@ -1,6 +1,6 @@
 // +build linux freebsd
 
-package main
+package filesystem
 
 /*
 This mounting code comes from RClone (https://github.com/rclone/rclone)

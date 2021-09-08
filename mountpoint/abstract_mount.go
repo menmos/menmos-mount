@@ -44,10 +44,10 @@ func (m *abstractMount) getEntriesFromQuery(query *payload.Query, fullpath strin
 
 	for i, hit := range results.Hits {
 		if hit.Metadata.BlobType == "File" {
-			fs.Infof(nil, "file entry for blob: ", hit.ID)
+			fs.Infof(nil, "file entry for blob: %s", hit.ID)
 			entries[i] = entry.NewFile(hit.ID, hit.Metadata, path.Join(fullpath, hit.Metadata.Name), m.client, m.fs)
 		} else {
-			fs.Infof(nil, "dir entry for blob: ", hit.ID)
+			fs.Infof(nil, "dir entry for blob: %s", hit.ID)
 			entries[i] = entry.NewDirectory(hit.ID, hit.Metadata, path.Join(fullpath, hit.Metadata.Name), m.client, m.fs)
 		}
 	}
